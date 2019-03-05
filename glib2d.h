@@ -54,6 +54,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+#include <stddef.h>
 
 /**
  * \def USE_PNG
@@ -79,8 +80,6 @@ extern "C" {
  * Enable this to greatly improve performance with 2d rotations. You SHOULD use
  * PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU) to avoid crashes.
  */
-#define USE_PNG
-#define USE_JPEG
 //#define USE_VFPU
 
 /**
@@ -148,8 +147,7 @@ extern "C" {
  *
  * Primary, secondary, tertiary and grayscale colors are defined.
  */
-enum g2dColors
-{
+enum g2dColors {
     // Primary colors
     RED             = 0xFF0000FF,
     GREEN           = 0xFF00FF00,
@@ -201,25 +199,21 @@ enum g2dColors
  * Change texture properties.
  * Can only be used with g2dTexLoad.
  */
-typedef enum
-{
+typedef enum {
     G2D_UP_LEFT,
     G2D_UP_RIGHT,
     G2D_DOWN_RIGHT,
     G2D_DOWN_LEFT,
     G2D_CENTER
 } g2dCoord_Mode;
-typedef enum
-{
+typedef enum {
     G2D_STRIP = 1 /**< Make a line strip. */
 } g2dLine_Mode;
-typedef enum
-{
+typedef enum {
     G2D_VSYNC = 1 /**< Limit the FPS to 60 (synchronized with the screen).
                        Better quality and less power consumption. */
 } g2dFlip_Mode;
-typedef enum
-{
+typedef enum {
     G2D_SWIZZLE = 1 /**< Recommended. Use it to speedup rendering. */
 } g2dTex_Mode;
 
@@ -238,8 +232,7 @@ typedef unsigned int g2dColor;
  * \struct g2dTexture
  * \brief Texture structure.
  */
-typedef struct
-{
+typedef struct {
     int tw;             /**< Real texture width. A power of two. */
     int th;             /**< Real texture height. A power of two. */
     int w;              /**< Texture width, as seen when drawing. */
@@ -266,14 +259,14 @@ extern g2dTexture g2d_disp_buffer;
  * This function will create a GU context and setup the display buffers.
  * Automatically called by the other functions.
  */
-void g2dInit();
+void g2dInit(void);
 
 /**
  * \brief Shutdowns the library.
  *
  * This function will destroy the GU context.
  */
-void g2dTerm();
+void g2dTerm(void);
 
 /**
  * \brief Clears screen & depth buffer.
@@ -290,7 +283,7 @@ void g2dClear(g2dColor color);
  * This function clears the zbuffer to zero (z range 0-65535).
  * Will automatically init the GU if needed.
  */
-void g2dClearZ();
+void g2dClearZ(void);
 
 /**
  * \brief Begins rectangles rendering.
@@ -332,7 +325,7 @@ void g2dBeginQuads(g2dTexture *tex);
  * This function begins object rendering. Resets all properties.
  * One g2dAdd() call per object.
  */
-void g2dBeginPoints();
+void g2dBeginPoints(void);
 
 /**
  * \brief Ends object rendering.
@@ -341,7 +334,7 @@ void g2dBeginPoints();
  * objects to the display list. Automatically adapts pspgu functionnalities
  * to get the best performance possible.
  */
-void g2dEnd();
+void g2dEnd(void);
 
 /**
  * \brief Resets current transformation and attribution.
@@ -350,7 +343,7 @@ void g2dEnd();
  * Calls g2dResetCoord(), g2dResetRotation(), g2dResetScale(),
  * g2dResetColor(), g2dResetAlpha(), g2dResetCrop() and g2dResetTex().
  */
-void g2dReset();
+void g2dReset(void);
 
 /**
  * \brief Flips the screen.
@@ -367,7 +360,7 @@ void g2dFlip(g2dFlip_Mode mode);
  *
  * This function must be called during object rendering.
  */
-void g2dAdd();
+void g2dAdd(void);
 
 /**
  * \brief Saves the current transformation to stack.
@@ -376,7 +369,7 @@ void g2dAdd();
  * The stack is 64 saves high.
  * Use it like the OpenGL one.
  */
-void g2dPush();
+void g2dPush(void);
 
 /**
  * \brief Restore the current transformation from stack.
@@ -385,7 +378,7 @@ void g2dPush();
  * The stack is 64 saves high.
  * Use it like the OpenGL one.
  */
-void g2dPop();
+void g2dPop(void);
 
 /**
  * \brief Creates a new blank texture.
@@ -420,12 +413,26 @@ void g2dTexFree(g2dTexture **tex);
 g2dTexture* g2dTexLoad(char path[], g2dTex_Mode mode);
 
 /**
+ * \brief Loads an image from memory.
+ * @param data Pointer to buffer.
+ * @param size Size of buffer.
+ * @param tex_mode A g2dTex_Mode constant.
+ * @returns Pointer to the generated texture.
+ *
+ * This function loads an image file. There is support for PNG & JPEG files
+ * (if USE_PNG and USE_JPEG are defined). Swizzling is enabled only for 16*16+
+ * textures (useless on small textures), pass G2D_SWIZZLE to enable it.
+ * Texture supported up to 512*512 in size only (hardware limitation).
+ */
+g2dTexture *g2dTexLoadMemory(void *data, size_t size, g2dTex_Mode mode);
+
+/**
  * \brief Resets the current coordinates.
  *
  * This function must be called during object rendering.
  * Sets g2dSetCoordMode() to G2D_UP_LEFT and g2dSetCoordXYZ() to (0,0,0).
  */
-void g2dResetCoord();
+void g2dResetCoord(void);
 
 /**
  * \brief Set coordinate mode.
@@ -501,7 +508,7 @@ void g2dSetCoordInteger(bool use);
  * This function resets the global scale to 1.f.
  * Translations and scales are multiplied by this factor.
  */
-void g2dResetGlobalScale();
+void g2dResetGlobalScale(void);
 
 /**
  * \brief Resets the current scale.
@@ -509,7 +516,7 @@ void g2dResetGlobalScale();
  * This function must be called during object rendering.
  * Sets the scale to the current texture size or (10,10).
  */
-void g2dResetScale();
+void g2dResetScale(void);
 
 /**
  * \brief Gets the global scale.
@@ -586,7 +593,7 @@ void g2dSetScaleWHRelative(float w, float h);
  * This function must be called during object rendering.
  * Sets g2dSetColor() to WHITE.
  */
-void g2dResetColor();
+void g2dResetColor(void);
 
 /**
  * \brief Resets the current alpha.
@@ -594,7 +601,7 @@ void g2dResetColor();
  * This function must be called during object rendering.
  * Sets g2dSetAlpha() to 255.
  */
-void g2dResetAlpha();
+void g2dResetAlpha(void);
 
 /**
  * \brief Gets the current alpha.
@@ -638,7 +645,7 @@ void g2dSetAlphaRelative(int alpha);
  * This function must be called during object rendering.
  * Sets g2dSetRotation() to 0°.
  */
-void g2dResetRotation();
+void g2dResetRotation(void);
 
 /**
  * \brief Gets the current rotation, in radians.
@@ -700,7 +707,7 @@ void g2dSetRotationRelative(float degrees);
  * This function must be called during object rendering.
  * Sets g2dSetCropXY() to (0;0) and g2dSetCropWH() to (tex->w,tex->h).
  */
-void g2dResetCrop();
+void g2dResetCrop(void);
 
 /**
  * \brief Gets the current crop position.
@@ -771,7 +778,7 @@ void g2dSetCropWHRelative(int w, int h);
  *
  * This function must be called during object rendering.
  */
-void g2dResetTex();
+void g2dResetTex(void);
 
 /**
  * \brief Set texture wrap.
@@ -796,7 +803,7 @@ void g2dSetTexLinear(bool use);
  *
  * This function can be called everywhere in the loop.
  */
-void g2dResetScissor();
+void g2dResetScissor(void);
 
 /**
  * \brief Sets the draw zone.
