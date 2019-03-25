@@ -28,7 +28,7 @@ This fork of glib2D does the following:
 
 # Installation
 
-- Simply put glib2d.c and glib2d.h in your source directory.
+- Simply put glib2d.c, glib2d.h and stb_image.h in your source directory.
 - Then add glib2d.o and link "-lz -lpspgu -lm -lpspvram"
   in your Makefile.
 - You're done !
