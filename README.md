@@ -10,9 +10,9 @@ The goals : keep it simple, keep it small, keep it fast.
 This fork of glib2D does the following:
 
 - No longer relies on ancient versiosn of libpng or libjpeg.
-- Uses stb_image (easy to update)
-- Adds support for loading BMP, GIF, PNM, PGM, and TGA files.
-- some general cleanup
+- Uses stb_image and dr_pcx (easy to keep up to date)
+- Adds support for loading BMP, GIF, PCX, PNM, PGM, and TGA files. (JPEG and PNG are initally supported)
+- Some general cleanup.
 
 
 # Known limitations
