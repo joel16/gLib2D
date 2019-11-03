@@ -25,19 +25,40 @@
 #include <vram.h>
 #include <malloc.h>
 
+#ifdef G2D_USE_PCX
 #define DR_PCX_IMPLEMENTATION
 #include "dr_pcx.h"
+#endif
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_HDR
 #define STBI_NO_PIC
 #define STBI_NO_PSD
+
+#ifdef G2D_USE_BMP
 #define STBI_ONLY_BMP
+#endif
+
+#ifdef G2D_USE_GIF
 #define STBI_ONLY_GIF
+#endif
+
+#ifdef G2D_USE_JPEG
 #define STBI_ONLY_JPEG
+#endif
+
+#ifdef G2D_USE_PNG
 #define STBI_ONLY_PNG
+#endif
+
+#ifdef G2D_USE_PNM
 #define STBI_ONLY_PNM
+#endif
+
+#ifdef G2D_USE_TGA
 #define STBI_ONLY_TGA
+#endif
+
 #include "stb_image.h"
 
 /* Defines */
@@ -1031,6 +1052,7 @@ void g2dTexFree(g2dTexture **tex) {
     *tex = NULL;
 }
 
+#ifdef G2D_USE_PCX
 static g2dTexture *_g2dTexLoadFilePCX(const char *path) {
     g2dTexture *tex = NULL;
     g2dColor *line = NULL;
@@ -1048,6 +1070,7 @@ static g2dTexture *_g2dTexLoadFilePCX(const char *path) {
     drpcx_free(line);
     return tex;
 }
+#endif
 
 static g2dTexture *_g2dTexLoadFile(const char *path) {
     g2dTexture *tex = NULL;
@@ -1091,12 +1114,14 @@ g2dTexture *g2dTexLoad(char *path, g2dTex_Mode mode) {
     if (path == NULL)
         return NULL;
 
+#ifdef G2D_USE_PCX
     char extension[5] = {0};
     strncpy(extension, &path[strlen(path) - 4], 4);
     
     if (!strncasecmp(extension, ".pcx", 4))
         tex = _g2dTexLoadFilePCX(path);
     else
+#endif
         tex = _g2dTexLoadFile(path);
 
     if (tex == NULL)
