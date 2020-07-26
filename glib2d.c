@@ -1108,7 +1108,7 @@ static g2dTexture *_g2dTexLoadMemory(void *data, int size) {
     return tex;
 }
 
-g2dTexture *g2dTexLoad(char *path, g2dTex_Mode mode) {
+g2dTexture *g2dTexLoad(const char *path, g2dTex_Mode mode) {
     g2dTexture *tex = NULL;
 
     if (path == NULL)
