@@ -23,43 +23,9 @@
 #include <pspkernel.h>
 #include <pspgu.h>
 #include <vram.h>
-#include <malloc.h>
-
-#ifdef G2D_USE_PCX
-#define DR_PCX_IMPLEMENTATION
-#include "dr_pcx.h"
-#endif
-
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_NO_HDR
-#define STBI_NO_PIC
-#define STBI_NO_PSD
-
-#ifdef G2D_USE_BMP
-#define STBI_ONLY_BMP
-#endif
-
-#ifdef G2D_USE_GIF
-#define STBI_ONLY_GIF
-#endif
-
-#ifdef G2D_USE_JPEG
-#define STBI_ONLY_JPEG
-#endif
-
-#ifdef G2D_USE_PNG
-#define STBI_ONLY_PNG
-#endif
-
-#ifdef G2D_USE_PNM
-#define STBI_ONLY_PNM
-#endif
-
-#ifdef G2D_USE_TGA
-#define STBI_ONLY_TGA
-#endif
-
-#include "stb_image.h"
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* Defines */
 
@@ -1052,14 +1018,12 @@ void g2dTexFree(g2dTexture **tex) {
     *tex = NULL;
 }
 
-#ifdef G2D_USE_PCX
-static g2dTexture *_g2dTexLoadFilePCX(const char *path) {
+static g2dTexture *_g2dTexLoadData(void *data, int width, int height) {
     g2dTexture *tex = NULL;
     g2dColor *line = NULL;
-    int width = 0, height = 0;
     u32 row = 0, col = 0;
 
-    line = (g2dColor *)drpcx_load_file(path, DRPCX_FALSE, &width, &height, NULL, PIXEL_SIZE);
+    line = data;
     tex = g2dTexCreate(width, height);
 
     for (row = 0; row < tex->w; row++) {
@@ -1067,98 +1031,16 @@ static g2dTexture *_g2dTexLoadFilePCX(const char *path) {
             tex->data[row + col * tex->tw] = line[(row + col * tex->w)];
     }
 
-    drpcx_free(line);
-    return tex;
-}
-#endif
-
-static g2dTexture *_g2dTexLoadFile(const char *path) {
-    g2dTexture *tex = NULL;
-    g2dColor *line = NULL;
-    int width = 0, height = 0;
-    u32 row = 0, col = 0;
-
-    line = (g2dColor *)stbi_load(path, &width, &height, NULL, STBI_rgb_alpha);
-    tex = g2dTexCreate(width, height);
-
-    for (row = 0; row < tex->w; row++) {
-        for (col = 0; col < tex->h; col++)
-            tex->data[row + col * tex->tw] = line[(row + col * tex->w)];
-    }
-
-    stbi_image_free(line);
     return tex;
 }
 
-static g2dTexture *_g2dTexLoadMemory(void *data, int size) {
-    g2dTexture *tex = NULL;
-    g2dColor *line = NULL;
-    int width = 0, height = 0;
-    u32 row = 0, col = 0;
-
-    line = (g2dColor *)stbi_load_from_memory((stbi_uc const *)data, size, &width, &height, NULL, STBI_rgb_alpha);
-    tex = g2dTexCreate(width, height);
-
-    for (row = 0; row < tex->w; row++) {
-        for (col = 0; col < tex->h; col++)
-            tex->data[row + col * tex->tw] = line[(row + col * tex->w)];
-    }
-
-    stbi_image_free(line);
-    return tex;
-}
-
-g2dTexture *g2dTexLoad(const char *path, g2dTex_Mode mode) {
-    g2dTexture *tex = NULL;
-
-    if (path == NULL)
-        return NULL;
-
-#ifdef G2D_USE_PCX
-    char extension[5] = {0};
-    strncpy(extension, &path[strlen(path) - 4], 4);
-    
-    if (!strncasecmp(extension, ".pcx", 4))
-        tex = _g2dTexLoadFilePCX(path);
-    else
-#endif
-        tex = _g2dTexLoadFile(path);
-
-    if (tex == NULL)
-        goto error;
-
-    // The PSP can't draw 512*512+ textures.
-    if (tex->w > 512 || tex->h > 512)
-        goto error;
-
-    // Swizzling is useless with small textures.
-    if ((mode & G2D_SWIZZLE) && (tex->w >= 16 || tex->h >= 16)) {
-        u8 *tmp = malloc(tex->tw*tex->th*PIXEL_SIZE);
-        _swizzle(tmp, (u8*)tex->data, tex->tw * PIXEL_SIZE, tex->th);
-        free(tex->data);
-        tex->data = (g2dColor*)tmp;
-        tex->swizzled = true;
-    }
-    else
-        tex->swizzled = false;
-
-    sceKernelDcacheWritebackRange(tex->data, tex->tw * tex->th * PIXEL_SIZE);
-
-    return tex;
-
-    // Load failure... abort
-error:
-    //g2dTexFree(&tex);
-    return tex;
-}
-
-g2dTexture *g2dTexLoadMemory(void *data, int size, g2dTex_Mode mode) {
+g2dTexture *g2dTexLoad(void *data, int width, int height, g2dTex_Mode mode) {
     g2dTexture *tex = NULL;
 
     if (data == NULL)
         return NULL;
 
-    tex = _g2dTexLoadMemory(data, size);
+    tex = _g2dTexLoadData(data, width, height);
 
     if (tex == NULL)
         goto error;

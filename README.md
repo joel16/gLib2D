@@ -10,8 +10,7 @@ The goals : keep it simple, keep it small, keep it fast.
 This fork of glib2D does the following:
 
 - No longer relies on ancient versiosn of libpng or libjpeg.
-- Uses stb_image and dr_pcx (easy to keep up to date)
-- Adds support for loading BMP, GIF, PCX, PNM, PGM, and TGA files. (JPEG and PNG are initally supported)
+- g2dTexLoad reads from an RGBA buffer instead of a path, allowing the developer to use any image decoder that outputs RGBA data.
 - Some general cleanup.
 
 
