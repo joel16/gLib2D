@@ -242,7 +242,7 @@ void g2dInit(void) {
     g2dResetScissor();
 
     sceGuFinish();
-    sceGuSync(0, 0);
+    sceGuSync(GU_SYNC_FINISH, GU_SYNC_WHAT_DONE);
     sceDisplayWaitVblankStart();
     sceGuDisplay(GU_TRUE);
 
@@ -560,7 +560,7 @@ void g2dFlip(g2dFlip_Mode mode) {
         g2dResetScissor();
 
     sceGuFinish();
-    sceGuSync(0, 0);
+    sceGuSync(GU_SYNC_FINISH, GU_SYNC_WHAT_DONE);
 
     if (mode & G2D_VSYNC)
         sceDisplayWaitVblankStart();
@@ -985,7 +985,7 @@ static void _swizzle(unsigned char *dest, unsigned char *source, int width, int 
 
 g2dTexture *g2dTexCreate(int w, int h) {
     g2dTexture *tex = malloc(sizeof(g2dTexture));
-    if (tex == NULL)
+    if (!tex)
         return NULL;
 
     tex->tw = _getNextPower2(w);
@@ -996,12 +996,10 @@ g2dTexture *g2dTexCreate(int w, int h) {
     tex->swizzled = false;
 
     tex->data = malloc(tex->tw * tex->th * sizeof(g2dColor));
-    if (tex->data == NULL) {
+    if (!tex->data) {
         free(tex);
         return NULL;
     }
-
-    memset(tex->data, 0, tex->tw * tex->th * sizeof(g2dColor));
 
     return tex;
 }
@@ -1019,54 +1017,48 @@ void g2dTexFree(g2dTexture **tex) {
 }
 
 static g2dTexture *_g2dTexLoadData(void *data, int width, int height) {
-    g2dTexture *tex = NULL;
-    g2dColor *line = NULL;
-    u32 row = 0, col = 0;
+    g2dTexture *tex = g2dTexCreate(width, height);
+    if (!tex)
+        return NULL;
 
-    line = data;
-    tex = g2dTexCreate(width, height);
-
-    for (row = 0; row < tex->w; row++) {
-        for (col = 0; col < tex->h; col++)
-            tex->data[row + col * tex->tw] = line[(row + col * tex->w)];
+    g2dColor *src = data;
+    for (u32 y = 0; y < tex->h; ++y) {
+        for (u32 x = 0; x < tex->w; ++x) {
+            tex->data[y * tex->tw + x] = src[y * tex->w + x];
+        }
     }
 
     return tex;
 }
 
 g2dTexture *g2dTexLoad(void *data, int width, int height, g2dTex_Mode mode) {
-    g2dTexture *tex = NULL;
-
-    if (data == NULL)
+    if (!data)
         return NULL;
 
-    tex = _g2dTexLoadData(data, width, height);
+    g2dTexture *tex = _g2dTexLoadData(data, width, height);
+    if (!tex)
+        return NULL;
 
-    if (tex == NULL)
-        goto error;
-
-    // The PSP can't draw 512*512+ textures.
     if (tex->w > 512 || tex->h > 512)
         goto error;
 
-    // Swizzling is useless with small textures.
+    u32 tex_size = tex->tw * tex->th * PIXEL_SIZE;
+
     if ((mode & G2D_SWIZZLE) && (tex->w >= 16 || tex->h >= 16)) {
-        u8 *tmp = malloc(tex->tw*tex->th*PIXEL_SIZE);
-        _swizzle(tmp, (u8*)tex->data, tex->tw*PIXEL_SIZE, tex->th);
+        u8 *tmp = malloc(tex_size);
+        if (!tmp)
+            goto error;
+
+        _swizzle(tmp, (u8*)tex->data, tex->tw * PIXEL_SIZE, tex->th);
         free(tex->data);
         tex->data = (g2dColor*)tmp;
         tex->swizzled = true;
     }
-    else
-        tex->swizzled = false;
 
-    sceKernelDcacheWritebackRange(tex->data, tex->tw * tex->th * PIXEL_SIZE);
-
+    sceKernelDcacheWritebackRange(tex->data, tex_size);
     return tex;
 
-    // Load failure... abort
 error:
-
     g2dTexFree(&tex);
     return NULL;
 }
